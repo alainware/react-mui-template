@@ -41,10 +41,13 @@ import {
   createTheme,
   ThemeProvider,
   useMediaQuery,
+  useTheme,
+  BottomNavigation,
+  BottomNavigationAction,
+  Fab,
 } from "@mui/material";
 import {
   Menu as MenuIcon,
-  ChevronLeft as ChevronLeftIcon,
   Dashboard as DashboardIcon,
   People as PeopleIcon,
   Inventory as InventoryIcon,
@@ -63,6 +66,7 @@ import {
 
 const DRAWER_WIDTH = 240;
 const DRAWER_COLLAPSED_WIDTH = 64;
+const BOTTOM_NAV_HEIGHT = 56;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -83,6 +87,8 @@ interface Column {
   label: string;
   minWidth?: number;
   align?: "left" | "right" | "center";
+  /** Hide this column below the given breakpoint: "sm" = hidden on xs, "md" = hidden on xs+sm */
+  hideBelow?: "sm" | "md";
 }
 
 // ─── Static Data ──────────────────────────────────────────────────────────────
@@ -96,12 +102,12 @@ const NAV_ITEMS = [
 ];
 
 const COLUMNS: Column[] = [
-  { id: "id", label: "ID", minWidth: 60 },
-  { id: "name", label: "Name", minWidth: 160 },
-  { id: "email", label: "Email", minWidth: 200 },
-  { id: "role", label: "Role", minWidth: 100, align: "center" },
-  { id: "status", label: "Status", minWidth: 100, align: "center" },
-  { id: "createdAt", label: "Created At", minWidth: 130, align: "right" },
+  { id: "id", label: "ID", minWidth: 50, hideBelow: "sm" },
+  { id: "name", label: "Name", minWidth: 140 },
+  { id: "email", label: "Email", minWidth: 180, hideBelow: "md" },
+  { id: "role", label: "Role", minWidth: 90, align: "center", hideBelow: "sm" },
+  { id: "status", label: "Status", minWidth: 90, align: "center" },
+  { id: "createdAt", label: "Created At", minWidth: 120, align: "right", hideBelow: "md" },
 ];
 
 const INITIAL_USERS: User[] = [
@@ -141,10 +147,10 @@ function roleColor(role: User["role"]): "error" | "primary" | "default" {
   return "default";
 }
 
-// ─── Sub-components (inline, to be split later) ───────────────────────────────
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
-/** Sidebar navigation */
-function Sidebar({
+/** Sidebar navigation list — reused by both temporary and permanent drawers */
+function SidebarList({
   open,
   activeNav,
   onNavigate,
@@ -161,15 +167,9 @@ function Sidebar({
             <ListItemButton
               selected={activeNav === label}
               onClick={() => onNavigate(label)}
-              sx={{
-                minHeight: 48,
-                justifyContent: open ? "initial" : "center",
-                px: 2.5,
-              }}
+              sx={{ minHeight: 48, justifyContent: open ? "initial" : "center", px: 2.5 }}
             >
-              <ListItemIcon
-                sx={{ minWidth: 0, mr: open ? 2 : "auto", justifyContent: "center" }}
-              >
+              <ListItemIcon sx={{ minWidth: 0, mr: open ? 2 : "auto", justifyContent: "center" }}>
                 {icon}
               </ListItemIcon>
               {open && <ListItemText primary={label} />}
@@ -193,7 +193,7 @@ function StatusChip({ status }: { status: User["status"] }) {
   );
 }
 
-/** Create / Edit dialog */
+/** Create / Edit dialog — goes full-screen on mobile */
 function UserFormDialog({
   open,
   editingUser,
@@ -209,34 +209,19 @@ function UserFormDialog({
   onClose: () => void;
   onSubmit: () => void;
 }) {
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const isEdit = Boolean(editingUser);
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth fullScreen={fullScreen}>
       <DialogTitle>{isEdit ? "Edit User" : "Create User"}</DialogTitle>
       <DialogContent dividers sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 2 }}>
-        <TextField
-          label="Full Name"
-          value={form.name}
-          onChange={(e) => onChange("name", e.target.value)}
-          fullWidth
-          required
-        />
-        <TextField
-          label="Email"
-          type="email"
-          value={form.email}
-          onChange={(e) => onChange("email", e.target.value)}
-          fullWidth
-          required
-        />
+        <TextField label="Full Name" value={form.name} onChange={(e) => onChange("name", e.target.value)} fullWidth required />
+        <TextField label="Email" type="email" value={form.email} onChange={(e) => onChange("email", e.target.value)} fullWidth required />
         <FormControl fullWidth>
           <InputLabel>Role</InputLabel>
-          <Select
-            value={form.role}
-            label="Role"
-            onChange={(e) => onChange("role", e.target.value)}
-          >
+          <Select value={form.role} label="Role" onChange={(e) => onChange("role", e.target.value)}>
             <MenuItem value="Admin">Admin</MenuItem>
             <MenuItem value="Editor">Editor</MenuItem>
             <MenuItem value="Viewer">Viewer</MenuItem>
@@ -244,11 +229,7 @@ function UserFormDialog({
         </FormControl>
         <FormControl fullWidth>
           <InputLabel>Status</InputLabel>
-          <Select
-            value={form.status}
-            label="Status"
-            onChange={(e) => onChange("status", e.target.value)}
-          >
+          <Select value={form.status} label="Status" onChange={(e) => onChange("status", e.target.value)}>
             <MenuItem value="Active">Active</MenuItem>
             <MenuItem value="Inactive">Inactive</MenuItem>
           </Select>
@@ -265,15 +246,7 @@ function UserFormDialog({
 }
 
 /** Delete confirmation dialog */
-function DeleteDialog({
-  user,
-  onClose,
-  onConfirm,
-}: {
-  user: User | null;
-  onClose: () => void;
-  onConfirm: () => void;
-}) {
+function DeleteDialog({ user, onClose, onConfirm }: { user: User | null; onClose: () => void; onConfirm: () => void }) {
   return (
     <Dialog open={Boolean(user)} onClose={onClose} maxWidth="xs" fullWidth>
       <DialogTitle>Delete User</DialogTitle>
@@ -290,52 +263,69 @@ function DeleteDialog({
   );
 }
 
-// ─── Main App ─────────────────────────────────────────────────────────────────
+// ─── Root: provides the theme ─────────────────────────────────────────────────
 
 export default function App() {
-  // Theme
   const prefersDark = useMediaQuery("(prefers-color-scheme: dark)");
   const [colorMode, setColorMode] = useState<ColorMode>(prefersDark ? "dark" : "light");
 
   const theme = useMemo(
     () =>
       createTheme({
-        palette: {
-          mode: colorMode,
-          primary: { main: "#1976d2" },
-        },
+        palette: { mode: colorMode, primary: { main: "#1976d2" } },
         typography: { fontFamily: "Roboto, sans-serif" },
         shape: { borderRadius: 8 },
       }),
     [colorMode]
   );
 
-  // Layout state
-  const [drawerOpen, setDrawerOpen] = useState(true);
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <AppContent colorMode={colorMode} setColorMode={setColorMode} />
+    </ThemeProvider>
+  );
+}
+
+// ─── AppContent: reads theme breakpoints ─────────────────────────────────────
+
+function AppContent({ colorMode, setColorMode }: { colorMode: ColorMode; setColorMode: (m: ColorMode) => void }) {
+  const theme = useTheme();
+
+  // Breakpoints
+  const isMobile  = useMediaQuery(theme.breakpoints.down("sm"));          // < 600 px
+  const isTablet  = useMediaQuery(theme.breakpoints.between("sm", "md")); // 600–900 px
+  const isDesktop = useMediaQuery(theme.breakpoints.up("md"));            // ≥ 900 px
+
+  // Drawer state
+  const [mobileDrawerOpen, setMobileDrawerOpen]         = useState(false);
+  const [desktopDrawerExpanded, setDesktopDrawerExpanded] = useState(true);
+
+  const permanentDrawerWidth = desktopDrawerExpanded ? DRAWER_WIDTH : DRAWER_COLLAPSED_WIDTH;
+
+  // Navigation
   const [activeNav, setActiveNav] = useState("Users");
 
-  // Data state
-  const [users, setUsers] = useState<User[]>(INITIAL_USERS);
+  // Data
+  const [users, setUsers]   = useState<User[]>(INITIAL_USERS);
   const [nextId, setNextId] = useState(INITIAL_USERS.length + 1);
 
-  // Table state
-  const [order, setOrder] = useState<Order>("asc");
-  const [orderBy, setOrderBy] = useState<keyof User>("id");
-  const [page, setPage] = useState(0);
+  // Table
+  const [order, setOrder]           = useState<Order>("asc");
+  const [orderBy, setOrderBy]       = useState<keyof User>("id");
+  const [page, setPage]             = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Dialog state
-  const [formOpen, setFormOpen] = useState(false);
+  // Dialogs
+  const [formOpen, setFormOpen]       = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [deletingUser, setDeletingUser] = useState<User | null>(null);
-  const [form, setForm] = useState<typeof EMPTY_FORM>({ ...EMPTY_FORM });
+  const [form, setForm]               = useState<typeof EMPTY_FORM>({ ...EMPTY_FORM });
 
-  // Snackbar state
+  // Snackbar
   const [snack, setSnack] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({
-    open: false,
-    message: "",
-    severity: "success",
+    open: false, message: "", severity: "success",
   });
 
   // ── Derived data ────────────────────────────────────────────────────────────
@@ -351,53 +341,39 @@ export default function App() {
     );
   }, [users, searchQuery]);
 
-  const sortedUsers = useMemo(
-    () => [...filteredUsers].sort(getComparator(order, orderBy)),
-    [filteredUsers, order, orderBy]
-  );
+  const sortedUsers    = useMemo(() => [...filteredUsers].sort(getComparator(order, orderBy)), [filteredUsers, order, orderBy]);
+  const paginatedUsers = useMemo(() => sortedUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage), [sortedUsers, page, rowsPerPage]);
 
-  const paginatedUsers = useMemo(
-    () => sortedUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
-    [sortedUsers, page, rowsPerPage]
+  // Filter visible columns per breakpoint
+  const visibleColumns = useMemo(
+    () =>
+      COLUMNS.filter((col) => {
+        if (col.hideBelow === "sm" && isMobile) return false;
+        if (col.hideBelow === "md" && (isMobile || isTablet)) return false;
+        return true;
+      }),
+    [isMobile, isTablet]
   );
 
   // ── Handlers ────────────────────────────────────────────────────────────────
 
   const handleSort = (col: keyof User) => {
-    const isAsc = orderBy === col && order === "asc";
-    setOrder(isAsc ? "desc" : "asc");
+    setOrder(orderBy === col && order === "asc" ? "desc" : "asc");
     setOrderBy(col);
   };
 
-  const openCreate = () => {
-    setEditingUser(null);
-    setForm({ ...EMPTY_FORM });
-    setFormOpen(true);
-  };
+  const openCreate = () => { setEditingUser(null); setForm({ ...EMPTY_FORM }); setFormOpen(true); };
+  const openEdit   = (user: User) => { setEditingUser(user); setForm({ name: user.name, email: user.email, role: user.role, status: user.status }); setFormOpen(true); };
 
-  const openEdit = (user: User) => {
-    setEditingUser(user);
-    setForm({ name: user.name, email: user.email, role: user.role, status: user.status });
-    setFormOpen(true);
-  };
-
-  const handleFormChange = (field: keyof typeof EMPTY_FORM, value: string) => {
+  const handleFormChange = (field: keyof typeof EMPTY_FORM, value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }));
-  };
 
   const handleFormSubmit = () => {
     if (editingUser) {
-      setUsers((prev) =>
-        prev.map((u) => (u.id === editingUser.id ? { ...u, ...form } : u))
-      );
+      setUsers((prev) => prev.map((u) => (u.id === editingUser.id ? { ...u, ...form } : u)));
       showSnack("User updated successfully.");
     } else {
-      const newUser: User = {
-        id: nextId,
-        ...form,
-        createdAt: new Date().toISOString().split("T")[0],
-      };
-      setUsers((prev) => [newUser, ...prev]);
+      setUsers((prev) => [{ id: nextId, ...form, createdAt: new Date().toISOString().split("T")[0] }, ...prev]);
       setNextId((n) => n + 1);
       setPage(0);
       showSnack("User created successfully.");
@@ -415,219 +391,301 @@ export default function App() {
   const showSnack = (message: string, severity: "success" | "error" = "success") =>
     setSnack({ open: true, message, severity });
 
+  const handleNavChange = (label: string) => {
+    setActiveNav(label);
+    if (isMobile) setMobileDrawerOpen(false);
+  };
+
+  // ── Shared drawer content ────────────────────────────────────────────────
+
+  const drawerContent = (expanded: boolean) => (
+    <>
+      <Toolbar />
+      <Divider />
+      <SidebarList open={expanded} activeNav={activeNav} onNavigate={handleNavChange} />
+    </>
+  );
+
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <Box sx={{ display: "flex", minHeight: "100vh" }}>
+    <Box sx={{ display: "flex", minHeight: "100vh" }}>
 
-        {/* ── Top Bar ── */}
-        <AppBar
-          position="fixed"
-          elevation={1}
-          sx={{
-            zIndex: (t) => t.zIndex.drawer + 1,
-            transition: (t) =>
-              t.transitions.create(["width", "margin"], {
-                easing: t.transitions.easing.sharp,
-                duration: t.transitions.duration.leavingScreen,
-              }),
-          }}
-        >
-          <Toolbar>
-            <IconButton
-              color="inherit"
-              edge="start"
-              onClick={() => setDrawerOpen((v) => !v)}
-              sx={{ mr: 2 }}
-            >
-              {drawerOpen ? <ChevronLeftIcon /> : <MenuIcon />}
+      {/* Top Bar */}
+      <AppBar position="fixed" elevation={1} sx={{ zIndex: (t) => t.zIndex.drawer + 1 }}>
+        <Toolbar>
+          <IconButton
+            color="inherit"
+            edge="start"
+            onClick={() =>
+              isMobile ? setMobileDrawerOpen((v) => !v) : setDesktopDrawerExpanded((v) => !v)
+            }
+            sx={{ mr: 2 }}
+          >
+            <MenuIcon />
+          </IconButton>
+          <Typography variant="h6" noWrap sx={{ flexGrow: 1, fontWeight: 700 }}>
+            MyApp
+          </Typography>
+          <Tooltip title="Notifications">
+            <IconButton color="inherit"><NotificationsIcon /></IconButton>
+          </Tooltip>
+          <Tooltip title="Toggle theme">
+            <IconButton color="inherit" onClick={() => setColorMode(colorMode === "light" ? "dark" : "light")}>
+              {colorMode === "light" ? <DarkModeIcon /> : <LightModeIcon />}
             </IconButton>
-            <Typography variant="h6" noWrap sx={{ flexGrow: 1, fontWeight: 700 }}>
-              MyApp
-            </Typography>
-            <Tooltip title="Notifications">
-              <IconButton color="inherit">
-                <NotificationsIcon />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Toggle theme">
-              <IconButton
-                color="inherit"
-                onClick={() => setColorMode((m) => (m === "light" ? "dark" : "light"))}
-              >
-                {colorMode === "light" ? <DarkModeIcon /> : <LightModeIcon />}
-              </IconButton>
-            </Tooltip>
-            <Avatar sx={{ ml: 1, width: 34, height: 34, bgcolor: "secondary.main", fontSize: 14 }}>
-              JD
-            </Avatar>
-          </Toolbar>
-        </AppBar>
+          </Tooltip>
+          <Avatar sx={{ ml: 1, width: 34, height: 34, bgcolor: "secondary.main", fontSize: 14 }}>JD</Avatar>
+        </Toolbar>
+      </AppBar>
 
-        {/* ── Side Nav ── */}
+      {/* Mobile — temporary overlay drawer */}
+      {isMobile && (
+        <Drawer
+          variant="temporary"
+          open={mobileDrawerOpen}
+          onClose={() => setMobileDrawerOpen(false)}
+          ModalProps={{ keepMounted: true }}
+          sx={{ "& .MuiDrawer-paper": { width: DRAWER_WIDTH, boxSizing: "border-box" } }}
+        >
+          {drawerContent(true)}
+        </Drawer>
+      )}
+
+      {/* Tablet — permanent icon-only drawer */}
+      {isTablet && (
         <Drawer
           variant="permanent"
-          open={drawerOpen}
           sx={{
-            width: drawerOpen ? DRAWER_WIDTH : DRAWER_COLLAPSED_WIDTH,
+            width: DRAWER_COLLAPSED_WIDTH,
+            flexShrink: 0,
+            "& .MuiDrawer-paper": { width: DRAWER_COLLAPSED_WIDTH, overflowX: "hidden", boxSizing: "border-box" },
+          }}
+        >
+          {drawerContent(false)}
+        </Drawer>
+      )}
+
+      {/* Desktop — permanent expandable drawer */}
+      {isDesktop && (
+        <Drawer
+          variant="permanent"
+          sx={{
+            width: permanentDrawerWidth,
             flexShrink: 0,
             whiteSpace: "nowrap",
             boxSizing: "border-box",
             "& .MuiDrawer-paper": {
-              width: drawerOpen ? DRAWER_WIDTH : DRAWER_COLLAPSED_WIDTH,
+              width: permanentDrawerWidth,
               overflowX: "hidden",
               transition: (t) =>
                 t.transitions.create("width", {
                   easing: t.transitions.easing.sharp,
-                  duration: drawerOpen
+                  duration: desktopDrawerExpanded
                     ? t.transitions.duration.enteringScreen
                     : t.transitions.duration.leavingScreen,
                 }),
             },
           }}
         >
-          <Toolbar />
-          <Divider />
-          <Sidebar open={drawerOpen} activeNav={activeNav} onNavigate={setActiveNav} />
+          {drawerContent(desktopDrawerExpanded)}
         </Drawer>
+      )}
 
-        {/* ── Main Content ── */}
-        <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-          <Toolbar />
+      {/* Main content */}
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          minWidth: 0,
+          px: { xs: 1.5, sm: 2, md: 3 },
+          pt: 3,
+          // Reserve space for BottomNavigation on mobile
+          pb: isMobile ? `${BOTTOM_NAV_HEIGHT + 16}px` : 3,
+        }}
+      >
+        <Toolbar />
 
-          {/* Page header */}
-          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 3 }}>
-            <Typography variant="h5" fontWeight={700}>
-              {activeNav}
-            </Typography>
-            {activeNav === "Users" && (
-              <Button variant="contained" startIcon={<AddIcon />} onClick={openCreate}>
-                Create User
-              </Button>
-            )}
-          </Box>
-
-          {/* Users view */}
-          {activeNav === "Users" && (
-            <Paper elevation={2} sx={{ borderRadius: 2, overflow: "hidden" }}>
-
-              {/* Search bar */}
-              <Box sx={{ p: 2, borderBottom: "1px solid", borderColor: "divider" }}>
-                <TextField
-                  placeholder="Search users…"
-                  size="small"
-                  value={searchQuery}
-                  onChange={(e) => { setSearchQuery(e.target.value); setPage(0); }}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon fontSize="small" />
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{ width: 300 }}
-                />
-              </Box>
-
-              {/* Table */}
-              <TableContainer>
-                <Table stickyHeader size="medium">
-                  <TableHead>
-                    <TableRow>
-                      {COLUMNS.map((col) => (
-                        <TableCell
-                          key={col.id}
-                          align={col.align ?? "left"}
-                          style={{ minWidth: col.minWidth }}
-                          sx={{ fontWeight: 700 }}
-                        >
-                          <TableSortLabel
-                            active={orderBy === col.id}
-                            direction={orderBy === col.id ? order : "asc"}
-                            onClick={() => handleSort(col.id)}
-                          >
-                            {col.label}
-                          </TableSortLabel>
-                        </TableCell>
-                      ))}
-                      <TableCell align="center" sx={{ fontWeight: 700 }}>
-                        Actions
-                      </TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {paginatedUsers.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={COLUMNS.length + 1} align="center" sx={{ py: 6, color: "text.secondary" }}>
-                          No users found.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      paginatedUsers.map((user) => (
-                        <TableRow key={user.id} hover>
-                          <TableCell>{user.id}</TableCell>
-                          <TableCell>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                              <Avatar sx={{ width: 28, height: 28, fontSize: 12, bgcolor: "primary.main" }}>
-                                {user.name.split(" ").map((n) => n[0]).join("")}
-                              </Avatar>
-                              {user.name}
-                            </Box>
-                          </TableCell>
-                          <TableCell>{user.email}</TableCell>
-                          <TableCell align="center">
-                            <Chip label={user.role} size="small" color={roleColor(user.role)} variant="outlined" />
-                          </TableCell>
-                          <TableCell align="center">
-                            <StatusChip status={user.status} />
-                          </TableCell>
-                          <TableCell align="right">{user.createdAt}</TableCell>
-                          <TableCell align="center">
-                            <Tooltip title="Edit">
-                              <IconButton size="small" onClick={() => openEdit(user)} color="primary">
-                                <EditIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Delete">
-                              <IconButton size="small" onClick={() => setDeletingUser(user)} color="error">
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-
-              {/* Pagination */}
-              <TablePagination
-                component="div"
-                count={filteredUsers.length}
-                page={page}
-                onPageChange={(_, p) => setPage(p)}
-                rowsPerPage={rowsPerPage}
-                onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
-                rowsPerPageOptions={[5, 10, 25]}
-              />
-            </Paper>
-          )}
-
-          {/* Placeholder for other nav items */}
-          {activeNav !== "Users" && (
-            <Paper elevation={2} sx={{ p: 6, textAlign: "center", borderRadius: 2 }}>
-              <Typography variant="h6" color="text.secondary">
-                {activeNav} — coming soon
-              </Typography>
-            </Paper>
+        {/* Page header */}
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 3 }}>
+          <Typography variant={isMobile ? "h6" : "h5"} fontWeight={700}>
+            {activeNav}
+          </Typography>
+          {/* Show button in header on tablet/desktop; FAB handles mobile */}
+          {activeNav === "Users" && !isMobile && (
+            <Button variant="contained" startIcon={<AddIcon />} onClick={openCreate}>
+              {isTablet ? "Create" : "Create User"}
+            </Button>
           )}
         </Box>
+
+        {/* Users view */}
+        {activeNav === "Users" && (
+          <Paper elevation={2} sx={{ borderRadius: 2, overflow: "hidden" }}>
+
+            {/* Search */}
+            <Box sx={{ p: { xs: 1.5, sm: 2 }, borderBottom: "1px solid", borderColor: "divider" }}>
+              <TextField
+                placeholder="Search users…"
+                size="small"
+                value={searchQuery}
+                onChange={(e) => { setSearchQuery(e.target.value); setPage(0); }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment>
+                  ),
+                }}
+                sx={{ width: { xs: "100%", sm: 280 } }}
+              />
+            </Box>
+
+            {/* Table */}
+            <TableContainer>
+              <Table stickyHeader size={isMobile ? "small" : "medium"}>
+                <TableHead>
+                  <TableRow>
+                    {visibleColumns.map((col) => (
+                      <TableCell
+                        key={col.id}
+                        align={col.align ?? "left"}
+                        style={{ minWidth: col.minWidth }}
+                        sx={{ fontWeight: 700 }}
+                      >
+                        <TableSortLabel
+                          active={orderBy === col.id}
+                          direction={orderBy === col.id ? order : "asc"}
+                          onClick={() => handleSort(col.id)}
+                        >
+                          {col.label}
+                        </TableSortLabel>
+                      </TableCell>
+                    ))}
+                    <TableCell align="center" sx={{ fontWeight: 700 }}>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+
+                <TableBody>
+                  {paginatedUsers.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={visibleColumns.length + 1} align="center" sx={{ py: 6, color: "text.secondary" }}>
+                        No users found.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    paginatedUsers.map((user) => (
+                      <TableRow key={user.id} hover>
+                        {visibleColumns.map((col) => {
+                          if (col.id === "name") return (
+                            <TableCell key={col.id}>
+                              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                <Avatar sx={{ width: isMobile ? 24 : 28, height: isMobile ? 24 : 28, fontSize: isMobile ? 10 : 12, bgcolor: "primary.main" }}>
+                                  {user.name.split(" ").map((n) => n[0]).join("")}
+                                </Avatar>
+                                <Typography variant="body2" noWrap sx={{ maxWidth: { xs: 110, sm: "none" } }}>
+                                  {user.name}
+                                </Typography>
+                              </Box>
+                            </TableCell>
+                          );
+                          if (col.id === "role") return (
+                            <TableCell key={col.id} align="center">
+                              <Chip label={user.role} size="small" color={roleColor(user.role)} variant="outlined" />
+                            </TableCell>
+                          );
+                          if (col.id === "status") return (
+                            <TableCell key={col.id} align="center">
+                              <StatusChip status={user.status} />
+                            </TableCell>
+                          );
+                          return (
+                            <TableCell key={col.id} align={col.align ?? "left"}>
+                              {String(user[col.id])}
+                            </TableCell>
+                          );
+                        })}
+                        <TableCell align="center" sx={{ whiteSpace: "nowrap" }}>
+                          <Tooltip title="Edit">
+                            <IconButton size="small" onClick={() => openEdit(user)} color="primary">
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Delete">
+                            <IconButton size="small" onClick={() => setDeletingUser(user)} color="error">
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+
+            {/* Pagination — hide rows-per-page on mobile */}
+            <TablePagination
+              component="div"
+              count={filteredUsers.length}
+              page={page}
+              onPageChange={(_, p) => setPage(p)}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+              rowsPerPageOptions={isMobile ? [] : [5, 10, 25]}
+              labelRowsPerPage={isTablet ? "Rows:" : "Rows per page:"}
+            />
+          </Paper>
+        )}
+
+        {/* Other sections placeholder */}
+        {activeNav !== "Users" && (
+          <Paper elevation={2} sx={{ p: { xs: 4, md: 6 }, textAlign: "center", borderRadius: 2 }}>
+            <Typography variant="h6" color="text.secondary">
+              {activeNav} — coming soon
+            </Typography>
+          </Paper>
+        )}
       </Box>
 
-      {/* ── Dialogs ── */}
+      {/* Mobile — Bottom Navigation */}
+      {isMobile && (
+        <BottomNavigation
+          value={activeNav}
+          onChange={(_, val) => setActiveNav(val)}
+          sx={{
+            position: "fixed",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            zIndex: (t) => t.zIndex.appBar,
+            borderTop: "1px solid",
+            borderColor: "divider",
+            height: BOTTOM_NAV_HEIGHT,
+          }}
+        >
+          {NAV_ITEMS.map(({ label, icon }) => (
+            <BottomNavigationAction key={label} label={label} value={label} icon={icon} sx={{ minWidth: 0, px: 0 }} />
+          ))}
+        </BottomNavigation>
+      )}
+
+      {/* Mobile — FAB for Create User (sits above BottomNavigation) */}
+      {isMobile && activeNav === "Users" && (
+        <Fab
+          color="primary"
+          aria-label="Create User"
+          onClick={openCreate}
+          sx={{
+            position: "fixed",
+            bottom: BOTTOM_NAV_HEIGHT + 16,
+            right: 16,
+            zIndex: (t) => t.zIndex.appBar,
+          }}
+        >
+          <AddIcon />
+        </Fab>
+      )}
+
+      {/* Dialogs */}
       <UserFormDialog
         open={formOpen}
         editingUser={editingUser}
@@ -642,7 +700,7 @@ export default function App() {
         onConfirm={handleDeleteConfirm}
       />
 
-      {/* ── Snackbar ── */}
+      {/* Snackbar */}
       <Snackbar
         open={snack.open}
         autoHideDuration={3000}
@@ -653,6 +711,6 @@ export default function App() {
           {snack.message}
         </Alert>
       </Snackbar>
-    </ThemeProvider>
+    </Box>
   );
 }
