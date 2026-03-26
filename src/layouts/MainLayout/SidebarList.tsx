@@ -6,7 +6,7 @@ import {
   ListItemText,
   Tooltip,
 } from "@mui/material";
-import { NAV_ITEMS } from "../../config/navigation";
+import { NAV_ITEMS } from "@/config/navigation";
 
 interface Props {
   /** Whether the sidebar is in expanded (true) or icon-only (false) mode. */

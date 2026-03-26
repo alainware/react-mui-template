@@ -12,7 +12,7 @@ import {
   Menu      as MenuIcon,
   Notifications as NotificationsIcon,
 } from "@mui/icons-material";
-import { useThemeContext } from "../../contexts/ThemeContext";
+import { useThemeContext } from "@/contexts/ThemeContext";
 
 interface Props {
   onMenuClick: () => void;

@@ -1,9 +1,9 @@
 import { useState, type JSX } from "react";
 import { Box, Paper, Typography } from "@mui/material";
-import { AppThemeProvider } from "./contexts/ThemeContext";
-import { SnackbarProvider } from "./contexts/SnackbarContext";
-import { MainLayout }       from "./layouts/MainLayout";
-import { UsersPage }        from "./features/users/UsersPage";
+import { AppThemeProvider } from "@/contexts/ThemeContext";
+import { SnackbarProvider } from "@/contexts/SnackbarContext";
+import { MainLayout }       from "@/layouts/MainLayout";
+import { UsersPage }        from "@/features/users/UsersPage";
 
 /**
  * Page registry

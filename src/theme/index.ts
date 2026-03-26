@@ -1,5 +1,5 @@
 import { createTheme, type Theme } from "@mui/material";
-import type { ColorMode } from "../types";
+import type { ColorMode } from "@/types";
 
 /**
  * createAppTheme
@@ -22,7 +22,7 @@ export function createAppTheme(mode: ColorMode): Theme {
     },
     components: {
       // Global component overrides go here as the app grows.
-      // Example:
+      // Example:s
       // MuiButton: { defaultProps: { disableElevation: true } },
     },
   });

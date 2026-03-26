@@ -1,4 +1,4 @@
-import type { Order, User } from "../types";
+import type { Order, User } from "@/types";
 
 // ─── Generic sort helpers ─────────────────────────────────────────────────────
 

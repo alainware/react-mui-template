@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import App from "./App";
+import App from "@/App";
 
 // Roboto font is loaded via index.html or a CSS import in your project.
 // If you used the MUI getting-started guide, you already have:

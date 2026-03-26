@@ -3,7 +3,7 @@ import {
   useContext,
   useState,
   useMemo,
-  ReactNode,
+  type ReactNode,
 } from "react";
 import { ThemeProvider, CssBaseline, useMediaQuery } from "@mui/material";
 import { createAppTheme } from "../theme";

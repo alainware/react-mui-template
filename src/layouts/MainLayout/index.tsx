@@ -1,9 +1,9 @@
-import { useState, ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Box, Divider, Drawer, Toolbar } from "@mui/material";
-import { TopBar }      from "./TopBar";
-import { SidebarList } from "./SidebarList";
-import { BottomNav }   from "./BottomNav";
-import { useBreakpoints } from "../../hooks/useBreakpoints";
+import { TopBar }      from "@/layouts/MainLayout/TopBar";
+import { SidebarList } from "@/layouts/MainLayout/SidebarList";
+import { BottomNav }   from "@/layouts/MainLayout/BottomNav";
+import { useBreakpoints } from "@/hooks/useBreakpoints";
 import {
   BOTTOM_NAV_HEIGHT,
   DRAWER_COLLAPSED_WIDTH,

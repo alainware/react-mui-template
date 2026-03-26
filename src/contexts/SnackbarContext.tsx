@@ -3,7 +3,7 @@ import {
   useContext,
   useState,
   useCallback,
-  ReactNode,
+  type ReactNode,
 } from "react";
 import { Snackbar, Alert } from "@mui/material";
 

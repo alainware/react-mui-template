@@ -5,7 +5,7 @@ import {
   BarChart   as BarChartIcon,
   Settings   as SettingsIcon,
 } from "@mui/icons-material";
-import { ReactElement } from "react";
+import { type ReactElement } from "react";
 
 export interface NavItem {
   label: string;

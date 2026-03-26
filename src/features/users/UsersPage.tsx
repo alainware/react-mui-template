@@ -1,19 +1,19 @@
 import { useState, useMemo } from "react";
 import { Box, Button, Fab, Typography } from "@mui/material";
 import { Add as AddIcon } from "@mui/icons-material";
-import { UsersTable }     from "./UsersTable";
-import { UserFormDialog } from "./UserFormDialog";
-import { DeleteDialog }   from "./DeleteDialog";
-import { useBreakpoints } from "../../hooks/useBreakpoints";
-import { useSnackbar }    from "../../contexts/SnackbarContext";
-import { getComparator }  from "../../utils/table";
+import { UsersTable }     from "@/features/users/UsersTable";
+import { UserFormDialog } from "@/features/users//UserFormDialog";
+import { DeleteDialog }   from "@/features/users//DeleteDialog";
+import { useBreakpoints } from "@/hooks/useBreakpoints";
+import { useSnackbar }    from "@/contexts/SnackbarContext";
+import { getComparator }  from "@/utils/table";
 import {
   INITIAL_USERS,
   EMPTY_FORM,
   type UserFormData,
-} from "../../config/users";
-import { BOTTOM_NAV_HEIGHT } from "../../constants/layout";
-import type { Order, User } from "../../types";
+} from "@/config/users";
+import { BOTTOM_NAV_HEIGHT } from "@/constants/layout";
+import type { Order, User } from "@/types";
 
 /**
  * UsersPage

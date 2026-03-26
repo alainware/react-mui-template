@@ -1,6 +1,6 @@
 import { BottomNavigation, BottomNavigationAction } from "@mui/material";
-import { NAV_ITEMS } from "../../config/navigation";
-import { BOTTOM_NAV_HEIGHT } from "../../constants/layout";
+import { NAV_ITEMS } from "@/config/navigation";
+import { BOTTOM_NAV_HEIGHT } from "@/constants/layout";
 
 interface Props {
   activeNav: string;

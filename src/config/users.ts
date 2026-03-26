@@ -1,4 +1,4 @@
-import type { Column, User } from "../types";
+import type { Column, User } from "@/types";
 
 /**
  * COLUMNS

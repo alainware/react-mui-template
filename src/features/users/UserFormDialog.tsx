@@ -12,8 +12,8 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import type { User } from "../../types";
-import type { UserFormData } from "../../config/users";
+import type { User } from "@/types";
+import type { UserFormData } from "@/config/users";
 
 interface Props {
   open: boolean;

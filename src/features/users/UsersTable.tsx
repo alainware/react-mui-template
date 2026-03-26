@@ -23,11 +23,11 @@ import {
   Edit   as EditIcon,
   Search as SearchIcon,
 } from "@mui/icons-material";
-import { StatusChip } from "../../components/ui/StatusChip";
-import { useBreakpoints } from "../../hooks/useBreakpoints";
-import { COLUMNS } from "../../config/users";
-import { roleColor } from "../../utils/table";
-import type { Order, User } from "../../types";
+import { StatusChip } from "@/components/ui/StatusChip";
+import { useBreakpoints } from "@/hooks/useBreakpoints";
+import { COLUMNS } from "@/config/users";
+import { roleColor } from "@/utils/table";
+import type { Order, User } from "@/types";
 
 interface Props {
   rows: User[];

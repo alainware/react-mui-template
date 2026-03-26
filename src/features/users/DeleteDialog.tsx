@@ -6,7 +6,7 @@ import {
   DialogTitle,
   Typography,
 } from "@mui/material";
-import type { User } from "../../types";
+import type { User } from "@/types";
 
 interface Props {
   /** The user to delete; null means the dialog is closed. */
