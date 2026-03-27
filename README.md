@@ -14,6 +14,7 @@ This project contains sample components that implement Material UI library for R
   - [Author](#author)
   - [Index](#index)
   - [Installation](#installation)
+  - [Path Aliases](#path-aliases)
 
 ## Installation
 
@@ -28,6 +29,9 @@ Then install the MUI dependencies.
 ```bash
 npm i @mui/material @emotion/react @emotion/styled @mui/icons-material @fontsource/roboto
 ```
+
+> [!NOTE]
+> You should delete `App.css` and `index.css` files as we will not use them in the future (just be sure to delete the references to those file too).
 
 Finally, install the Roboto font into the project and add the CssBaseline component at `main.tsx`.
 
@@ -61,3 +65,44 @@ export default function App () {
   )
 }
 ```
+
+Run the project so you can visualize your first MUI-styled component.
+
+```bash
+npm run dev
+```
+
+## Path Aliases
+
+This step is not mandatory, but if you want to follow good practices and prevent making a mess with the imports in your application, then you need to apply the following changes to `vite.config.ts` and `tsconfig.app.json`.
+
+Add the following lines to `vite.config.ts`
+
+```typescript
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import path from 'path'
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    }
+  },
+})
+
+```
+
+Add the following lines to `tsconfig.app.json` within `compilerOptions`:
+
+```json
+/* Path Aliases */
+"baseUrl": ".",
+"paths": {
+  "@/*": ["./src/*"]
+}
+```
+
+Finally, restart the IDE's TypeScript server (or just restart the IDE) so the changes can take effect.
