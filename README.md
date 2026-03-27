@@ -106,3 +106,11 @@ Add the following lines to `tsconfig.app.json` within `compilerOptions`:
 ```
 
 Finally, restart the IDE's TypeScript server (or just restart the IDE) so the changes can take effect.
+
+Now you will have clean imports in your application.
+
+```tsx
+// @ = ./src
+import { NAV_ITEMS } from "@/config/navigation";
+import { BOTTOM_NAV_HEIGHT } from "@/constants/layout";
+```
